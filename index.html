@@ -546,6 +546,14 @@
     text-transform: uppercase; height: 18px; margin-bottom: 8px;
     transition: opacity .3s;
   }
+  .pin-change-btn {
+    background: transparent; border: 1px solid #333; color: #555;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: .7rem; letter-spacing: .25em; text-transform: uppercase;
+    padding: 7px 16px; cursor: pointer; width: 100%;
+    transition: border-color .2s, color .2s;
+  }
+  .pin-change-btn:hover { border-color: var(--yellow-dim); color: var(--yellow); }
 </style>
 </head>
 <body>
@@ -664,6 +672,7 @@
       <button class="pin-key" onclick="pinKey('0')">0</button>
       <button class="pin-key del" onclick="closeOverlay('pin-overlay');pinReset()">✕</button>
     </div>
+    <button class="pin-change-btn" id="pin-change-btn" onclick="startChangePin()">Modifier le code PIN</button>
   </div>
 </div>
 
@@ -673,6 +682,11 @@
     <span class="confirm-icon">🚨</span>
     <div class="confirm-title">Accident déclaré</div>
     <div class="confirm-text">Voulez-vous remettre le compteur à zéro ?<br>Le record actuel sera conservé.</div>
+    <label class="edit-field-label" for="accident-date" style="text-align:left;display:block;margin-bottom:6px;">Date de l'accident</label>
+    <input type="date" id="accident-date"
+      style="width:100%;background:#0a0a0a;border:2px solid var(--yellow-dim);color:var(--yellow);
+             font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;letter-spacing:.1em;
+             padding:10px 14px;margin-bottom:24px;outline:none;color-scheme:dark;" />
     <div class="confirm-btns">
       <button class="btn-confirm" onclick="confirmReset()">Confirmer</button>
       <button class="btn-cancel" onclick="closeOverlay('confirm-overlay')">Annuler</button>
@@ -858,16 +872,46 @@
   setInterval(renderClock, 60000);
 
   // ── PIN ──────────────────────────────────────────────────────────
-  const PIN_CODE = '1234'; // ← modifiez ce code ici
+  const DEFAULT_PIN = '1234';
+  let currentPin = DEFAULT_PIN;
   let pinBuffer = '';
   let pinAction = '';
+  let pinMode = 'auth'; // 'auth' | 'change-old' | 'change-new' | 'change-confirm'
+  let newPinBuffer = '';
+
+  // Charger le PIN depuis Firebase
+  db.ref('config/pin').once('value').then(s => {
+    if (s.val()) currentPin = s.val();
+  });
+
+  const PIN_LABELS = {
+    edit:  'Saisie du compteur',
+    reset: 'Signaler un accident',
+    purge: 'Réinitialisation totale'
+  };
+
+  const PIN_MODE_LABELS = {
+    'auth':           s => PIN_LABELS[s] || 'Saisissez le code',
+    'change-old':     () => 'Saisissez l\'ancien code',
+    'change-new':     () => 'Saisissez le nouveau code',
+    'change-confirm': () => 'Confirmez le nouveau code'
+  };
 
   function askWithPin(action) {
     pinAction = action;
+    pinMode = 'auth';
     pinReset();
-    const labels = { edit: 'Saisie du compteur', reset: 'Signaler un accident', purge: 'Réinitialisation totale' };
-    document.getElementById('pin-subtitle').textContent = labels[action] || 'Saisissez le code';
+    document.getElementById('pin-subtitle').textContent = PIN_LABELS[action] || '';
+    document.getElementById('pin-change-btn').style.display = 'block';
     document.getElementById('pin-overlay').classList.add('active');
+  }
+
+  function startChangePin() {
+    pinMode = 'change-old';
+    newPinBuffer = '';
+    pinReset();
+    document.getElementById('pin-subtitle').textContent = PIN_MODE_LABELS['change-old']();
+    document.getElementById('pin-change-btn').style.display = 'none';
   }
 
   function pinReset() {
@@ -877,7 +921,10 @@
   }
 
   function pinKey(k) {
-    if (k === 'C') { if (pinBuffer.length > 0) { pinBuffer = pinBuffer.slice(0, -1); pinRefresh(); } return; }
+    if (k === 'C') {
+      if (pinBuffer.length > 0) { pinBuffer = pinBuffer.slice(0, -1); pinRefresh(); }
+      return;
+    }
     if (pinBuffer.length >= 4) return;
     pinBuffer += k;
     pinRefresh();
@@ -890,15 +937,55 @@
   }
 
   function pinValidate() {
-    if (pinBuffer === PIN_CODE) {
-      closeOverlay('pin-overlay');
+    if (pinMode === 'auth') {
+      if (pinBuffer === currentPin) {
+        closeOverlay('pin-overlay');
+        pinReset();
+        if (pinAction === 'edit')  openEdit();
+        if (pinAction === 'reset') askReset();
+        if (pinAction === 'purge') askPurge();
+      } else {
+        document.getElementById('pin-error').textContent = 'Code incorrect';
+        setTimeout(pinReset, 900);
+      }
+
+    } else if (pinMode === 'change-old') {
+      if (pinBuffer === currentPin) {
+        pinMode = 'change-new';
+        pinReset();
+        document.getElementById('pin-subtitle').textContent = PIN_MODE_LABELS['change-new']();
+      } else {
+        document.getElementById('pin-error').textContent = 'Code incorrect';
+        setTimeout(pinReset, 900);
+      }
+
+    } else if (pinMode === 'change-new') {
+      newPinBuffer = pinBuffer;
+      pinMode = 'change-confirm';
       pinReset();
-      if (pinAction === 'edit')  openEdit();
-      if (pinAction === 'reset') askReset();
-      if (pinAction === 'purge') askPurge();
-    } else {
-      document.getElementById('pin-error').textContent = 'Code incorrect';
-      setTimeout(() => { pinReset(); }, 900);
+      document.getElementById('pin-subtitle').textContent = PIN_MODE_LABELS['change-confirm']();
+
+    } else if (pinMode === 'change-confirm') {
+      if (pinBuffer === newPinBuffer) {
+        currentPin = newPinBuffer;
+        db.ref('config/pin').set(currentPin);
+        closeOverlay('pin-overlay');
+        pinReset();
+        pinMode = 'auth';
+        newPinBuffer = '';
+        // Confirmation visuelle
+        const err = document.getElementById('pin-error');
+        err.style.color = '#27c97a';
+        err.textContent = 'Code modifié avec succès';
+      } else {
+        document.getElementById('pin-error').textContent = 'Les codes ne correspondent pas';
+        setTimeout(() => {
+          pinMode = 'change-new';
+          newPinBuffer = '';
+          pinReset();
+          document.getElementById('pin-subtitle').textContent = PIN_MODE_LABELS['change-new']();
+        }, 900);
+      }
     }
   }
 
@@ -909,17 +996,24 @@
 
   // ── Reset ─────────────────────────────────────────────────────────
   function askReset() {
+    // Pré-remplir avec la date du jour
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('accident-date').value = today;
     document.getElementById('confirm-overlay').classList.add('active');
   }
 
   function confirmReset() {
+    const dateVal = document.getElementById('accident-date').value;
+    if (!dateVal) { return; }
     closeOverlay('confirm-overlay');
     ref.once('value').then(snap => {
       const d = snap.val() || { startDate: new Date().toISOString(), record: 0 };
       const days = daysDiff(d.startDate);
       const newRecord = days > (d.record || 0) ? days : (d.record || 0);
-      const now = new Date().toISOString();
-      ref.set({ startDate: now, record: newRecord });
+      // Le lendemain de la date d'accident = nouveau départ du compteur
+      const accidentDate = new Date(dateVal + 'T12:00:00');
+      const newStart = new Date(accidentDate.getTime() + 24 * 60 * 60 * 1000).toISOString();
+      ref.set({ startDate: newStart, record: newRecord });
       const el = document.getElementById('count');
       el.classList.remove('flash-red');
       void el.offsetWidth;
