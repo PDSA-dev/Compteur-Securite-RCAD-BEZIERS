@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jours sans accident du travail</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --panel: #141414;
+    --border: #2a2a2a;
+    --yellow: #f5c400;
+    --yellow-dim: #8a6f00;
+    --orange: #e06820;
+    --white: #f0ede6;
+    --muted: #666;
+    --green: #27c97a;
+    --red: #e03b3b;
+    --scan-line: rgba(255,255,255,0.03);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Barlow Condensed', sans-serif;
+    overflow: hidden;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 3px,
+      var(--scan-line) 3px, var(--scan-line) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .stripe-bar {
+    height: 18px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--yellow) 0px, var(--yellow) 14px,
+      #1a1a1a 14px, #1a1a1a 28px
+    );
+    flex-shrink: 0;
+  }
+
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+  }
+
+  main::before, main::after {
+    content: '';
+    position: absolute;
+    width: 40px; height: 40px;
+    border-color: var(--yellow-dim);
+    border-style: solid;
+  }
+  main::before { top: 20px; left: 20px; border-width: 3px 0 0 3px; }
+  main::after  { bottom: 20px; right: 20px; border-width: 0 3px 3px 0; }
+
+  .label-top {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.4rem, 4vw, 2.8rem);
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .company-name {
+    font-size: clamp(0.7rem, 1.8vw, 1rem);
+    letter-spacing: 0.4em;
+    color: var(--yellow-dim);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .live-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .counter-frame {
+    position: relative;
+    background: #0a0a0a;
+    border: 2px solid var(--border);
+    padding: 30px 60px 22px;
+    margin-bottom: 24px;
+    min-width: clamp(260px, 60vw, 700px);
+    text-align: center;
+  }
+
+  .counter-frame::before {
+    content: 'JOURS';
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--yellow);
+    color: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.3em;
+    padding: 2px 18px;
+  }
+
+  .count-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(8rem, 25vw, 18rem);
+    line-height: 0.9;
+    color: var(--yellow);
+    text-shadow: 0 0 40px rgba(245,196,0,0.4), 0 0 80px rgba(245,196,0,0.15);
+    letter-spacing: -0.02em;
+    transition: all 0.3s ease;
+    display: block;
+  }
+
+  .count-number.flash-red {
+    animation: flashRed 1.4s ease forwards;
+  }
+
+  @keyframes flashRed {
+    0%   { color: var(--red); text-shadow: 0 0 80px rgba(224,59,59,0.9); }
+    50%  { color: var(--red); text-shadow: 0 0 30px rgba(224,59,59,0.3); }
+    100% { color: var(--yellow); text-shadow: 0 0 40px rgba(245,196,0,0.4); }
+  }
+
+  .sans-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.2rem, 3.5vw, 2.2rem);
+    letter-spacing: 0.4em;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+
+  .accident-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.4rem, 4vw, 2.8rem);
+    letter-spacing: 0.15em;
+    color: var(--orange);
+    margin-bottom: 28px;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 12px 24px;
+    text-align: center;
+    min-width: 150px;
+  }
+
+  .stat-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.7rem;
+    letter-spacing: 0.1em;
+    color: var(--white);
+  }
+  .stat-value.green { color: var(--green); }
+
+  .record-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(39,201,122,0.1);
+    border: 1px solid var(--green);
+    padding: 5px 16px;
+    font-size: 0.72rem;
+    letter-spacing: 0.25em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  .record-badge.visible { opacity: 1; }
+  .record-badge::before { content: '★'; }
+
+  .actions-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .reset-btn {
+    background: transparent;
+    border: 2px solid var(--red);
+    color: var(--red);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.3em;
+    padding: 12px 36px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: color 0.2s;
+  }
+  .reset-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s;
+    z-index: 0;
+  }
+  .reset-btn:hover::before { transform: scaleX(1); }
+  .reset-btn:hover { color: #fff; }
+  .reset-btn span { position: relative; z-index: 1; }
+  .reset-btn:active { transform: scale(0.97); }
+
+  .edit-btn {
+    background: transparent;
+    border: 2px solid var(--yellow-dim);
+    color: var(--yellow);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.3em;
+    padding: 12px 28px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: color 0.2s;
+  }
+  .edit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--yellow);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s;
+    z-index: 0;
+  }
+  .edit-btn:hover::before { transform: scaleX(1); }
+  .edit-btn:hover { color: #000; }
+  .edit-btn span { position: relative; z-index: 1; }
+
+  .date-footer {
+    font-size: 0.73rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .sync-note {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: #3a3a3a;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* Overlays */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .overlay.active { display: flex; }
+
+  .dialog-box {
+    background: #111;
+    padding: 44px 52px;
+    text-align: center;
+    max-width: 460px;
+    width: 90%;
+  }
+
+  #confirm-overlay .dialog-box { border: 2px solid var(--red); }
+
+  .confirm-icon { font-size: 3rem; margin-bottom: 14px; display: block; }
+
+  .confirm-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.2em;
+    color: var(--red);
+    margin-bottom: 10px;
+  }
+
+  .confirm-text {
+    font-size: 0.95rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 28px;
+    line-height: 1.65;
+  }
+
+  .confirm-btns { display: flex; gap: 14px; justify-content: center; }
+
+  .btn-confirm {
+    background: var(--red); border: none; color: #fff;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem; letter-spacing: 0.3em; padding: 13px 36px; cursor: pointer;
+  }
+  .btn-cancel {
+    background: transparent; border: 2px solid var(--border); color: var(--muted);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem; letter-spacing: 0.3em; padding: 13px 36px; cursor: pointer;
+  }
+  .btn-cancel:hover { border-color: var(--white); color: var(--white); }
+
+  #edit-overlay .dialog-box { border: 2px solid var(--yellow-dim); }
+
+  .edit-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.2em;
+    color: var(--yellow);
+    margin-bottom: 8px;
+  }
+
+  .edit-subtitle {
+    font-size: 0.85rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  .edit-field-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+    text-align: left;
+  }
+
+  .edit-input {
+    width: 100%;
+    background: #0a0a0a;
+    border: 2px solid var(--yellow-dim);
+    color: var(--yellow);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 0.15em;
+    text-align: center;
+    padding: 10px 16px;
+    margin-bottom: 8px;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  .edit-input::-webkit-outer-spin-button,
+  .edit-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .edit-input:focus { border-color: var(--yellow); }
+
+  .edit-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 28px;
+    text-align: left;
+  }
+
+  .edit-btns { display: flex; gap: 14px; justify-content: center; }
+
+  .btn-apply {
+    background: var(--yellow); border: none; color: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem; letter-spacing: 0.3em; padding: 13px 36px; cursor: pointer;
+  }
+  .btn-apply:hover { background: #ffd700; }
+
+  /* Purge */
+  .purge-btn {
+    position: fixed;
+    bottom: 26px;
+    right: 28px;
+    z-index: 50;
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    color: #444;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .purge-btn:hover { border-color: #e03b3b; color: #e03b3b; }
+
+  #purge-overlay .dialog-box { border: 2px solid #e03b3b; }
+  .purge-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.2em;
+    color: #e03b3b;
+    margin-bottom: 10px;
+  }
+  .purge-text {
+    font-size: 0.9rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 28px;
+    line-height: 1.65;
+  }
+  .purge-warning {
+    background: rgba(224,59,59,0.08);
+    border: 1px solid rgba(224,59,59,0.3);
+    padding: 10px 16px;
+    font-size: 0.78rem;
+    color: #e03b3b;
+    letter-spacing: 0.08em;
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="stripe-bar"></div>
+
+  <main>
+    <div class="label-top">Sécurité au travail</div>
+    <div class="company-name">
+      <span class="live-dot"></span>Données partagées en temps réel
+    </div>
+
+    <div class="counter-frame">
+      <span class="count-number" id="count">—</span>
+    </div>
+
+    <div class="sans-label">Sans accident du travail</div>
+    <div class="accident-label">⚠ Zéro blessure, objectif commun ⚠</div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-label">Depuis le</div>
+        <div class="stat-value" id="start-date">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Record établi</div>
+        <div class="stat-value green" id="record-val">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Dernier accident</div>
+        <div class="stat-value" id="last-accident">Aucun</div>
+      </div>
+    </div>
+
+    <div class="record-badge" id="record-badge">Nouveau record en cours !</div>
+
+    <div class="actions-row">
+      <button class="edit-btn" onclick="openEdit()"><span>✎ Saisir le nombre de jours actuel</span></button>
+      <button class="reset-btn" onclick="askReset()"><span>⚠ Signaler un accident — Remettre à zéro</span></button>
+    </div>
+
+    <div class="date-footer" id="today-date"></div>
+    <div class="sync-note">Compteur commun — même valeur pour tous les visiteurs</div>
+  </main>
+
+  <div class="stripe-bar"></div>
+</div>
+
+<button class="purge-btn" onclick="askPurge()">⊗ Réinitialiser toutes les données</button>
+
+<!-- Confirm reset -->
+<div class="overlay" id="confirm-overlay">
+  <div class="dialog-box">
+    <span class="confirm-icon">🚨</span>
+    <div class="confirm-title">Accident déclaré</div>
+    <div class="confirm-text">
+      Voulez-vous vraiment remettre le compteur à zéro ?<br>
+      Le record actuel sera conservé.
+    </div>
+    <div class="confirm-btns">
+      <button class="btn-confirm" onclick="confirmReset()">Confirmer</button>
+      <button class="btn-cancel" onclick="closeOverlay('confirm-overlay')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit days -->
+<div class="overlay" id="edit-overlay">
+  <div class="dialog-box">
+    <div class="edit-title">✎ Saisir le compteur</div>
+    <div class="edit-subtitle">
+      Entrez le nombre de jours déjà écoulés depuis le dernier accident.<br>
+      Le compteur continuera à partir de cette valeur automatiquement.
+    </div>
+    <label class="edit-field-label" for="days-input">Nombre de jours actuel</label>
+    <input class="edit-input" type="number" id="days-input" min="0" max="9999" placeholder="0" />
+    <div class="edit-hint">Ex : si le dernier accident remonte à 45 jours, entrez 45.</div>
+    <div class="edit-btns">
+      <button class="btn-apply" onclick="applyDays()">Appliquer</button>
+      <button class="btn-cancel" onclick="closeOverlay('edit-overlay')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Purge -->
+<div class="overlay" id="purge-overlay">
+  <div class="dialog-box">
+    <span class="confirm-icon">🗑️</span>
+    <div class="purge-title">Réinitialisation totale</div>
+    <div class="purge-text">
+      Cette action supprime définitivement toutes les données partagées :
+      compteur actuel, record historique et date du dernier accident.
+    </div>
+    <div class="purge-warning">
+      ⚠ Cette action est irréversible et affecte tous les visiteurs.<br>
+      Le compteur repartira de zéro pour tout le monde.
+    </div>
+    <div class="confirm-btns">
+      <button class="btn-confirm" onclick="confirmPurge()">Tout supprimer</button>
+      <button class="btn-cancel" onclick="closeOverlay('purge-overlay')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script>
+  // ── Firebase config ──────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyANZLxt-LrE3O71AhQ2YBP_BEjcv9OImuE",
+    authDomain: "compteur-securite.firebaseapp.com",
+    databaseURL: "https://compteur-securite-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "compteur-securite",
+    storageBucket: "compteur-securite.firebasestorage.app",
+    messagingSenderId: "752222925843",
+    appId: "1:752222925843:web:3c58778904ba8e2ca77be6"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db  = firebase.database();
+  const ref = db.ref('compteur');
+
+  // ── Helpers ──────────────────────────────────────────────────────
+  function fmtDate(iso) {
+    return new Date(iso).toLocaleDateString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+  }
+
+  function daysDiff(isoFrom) {
+    return Math.floor((Date.now() - new Date(isoFrom).getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  function renderClock() {
+    const now = new Date();
+    document.getElementById('today-date').textContent =
+      now.toLocaleDateString('fr-FR', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      }) + ' — ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ── Listener temps réel ──────────────────────────────────────────
+  ref.on('value', snap => {
+    let d = snap.val();
+
+    if (!d) {
+      // Premier lancement : initialiser la base
+      d = { startDate: new Date().toISOString(), record: 0, lastAccident: null };
+      ref.set(d);
+      return;
+    }
+
+    const days = daysDiff(d.startDate);
+    document.getElementById('count').textContent = days;
+    document.getElementById('start-date').textContent = fmtDate(d.startDate);
+    document.getElementById('record-val').textContent = d.record > 0 ? d.record + ' j' : '—';
+    document.getElementById('last-accident').textContent =
+      d.lastAccident ? fmtDate(d.lastAccident) : 'Aucun';
+
+    const badge = document.getElementById('record-badge');
+    badge.classList.toggle('visible', days > 0 && days >= d.record);
+  });
+
+  // Horloge locale (mise à jour chaque minute)
+  renderClock();
+  setInterval(renderClock, 60000);
+
+  // ── Overlays ─────────────────────────────────────────────────────
+  function closeOverlay(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+
+  // ── Reset ─────────────────────────────────────────────────────────
+  function askReset() {
+    document.getElementById('confirm-overlay').classList.add('active');
+  }
+
+  function confirmReset() {
+    closeOverlay('confirm-overlay');
+    ref.once('value').then(snap => {
+      const d = snap.val() || { startDate: new Date().toISOString(), record: 0, lastAccident: null };
+      const days = daysDiff(d.startDate);
+      const newRecord = days > (d.record || 0) ? days : (d.record || 0);
+      const now = new Date().toISOString();
+
+      ref.set({ startDate: now, record: newRecord, lastAccident: now });
+
+      const el = document.getElementById('count');
+      el.classList.remove('flash-red');
+      void el.offsetWidth;
+      el.classList.add('flash-red');
+      setTimeout(() => el.classList.remove('flash-red'), 1400);
+    });
+  }
+
+  // ── Edit ──────────────────────────────────────────────────────────
+  function openEdit() {
+    ref.once('value').then(snap => {
+      const d = snap.val();
+      document.getElementById('days-input').value = d ? daysDiff(d.startDate) : 0;
+      document.getElementById('edit-overlay').classList.add('active');
+      setTimeout(() => document.getElementById('days-input').select(), 50);
+    });
+  }
+
+  function applyDays() {
+    const val = parseInt(document.getElementById('days-input').value);
+    if (isNaN(val) || val < 0) { document.getElementById('days-input').focus(); return; }
+
+    ref.once('value').then(snap => {
+      const d = snap.val() || { record: 0, lastAccident: null };
+      const startDate = new Date(Date.now() - val * 24 * 60 * 60 * 1000).toISOString();
+      const newRecord = val > (d.record || 0) ? val : (d.record || 0);
+
+      ref.update({ startDate, record: newRecord });
+      closeOverlay('edit-overlay');
+    });
+  }
+
+  document.getElementById('days-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter')  applyDays();
+    if (e.key === 'Escape') closeOverlay('edit-overlay');
+  });
+
+  // ── Purge ─────────────────────────────────────────────────────────
+  function askPurge() {
+    document.getElementById('purge-overlay').classList.add('active');
+  }
+
+  function confirmPurge() {
+    ref.set({ startDate: new Date().toISOString(), record: 0, lastAccident: null });
+    closeOverlay('purge-overlay');
+  }
+</script>
+</body>
+</html>
