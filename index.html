@@ -65,7 +65,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 16px 20px;
+    padding: 8px 20px;
     position: relative;
     overflow: hidden;
   }
@@ -82,7 +82,7 @@
 
   .label-top {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(1.2rem, 3.5vw, 2.4rem);
+    font-size: clamp(1rem, 2.2vw, 1.6rem);
     letter-spacing: 0.25em;
     color: var(--muted);
     text-transform: uppercase;
@@ -90,11 +90,11 @@
   }
 
   .company-name {
-    font-size: clamp(0.65rem, 1.6vw, 0.9rem);
+    font-size: clamp(0.6rem, 1.4vw, 0.82rem);
     letter-spacing: 0.4em;
     color: var(--yellow-dim);
     text-transform: uppercase;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -117,8 +117,8 @@
     position: relative;
     background: #0a0a0a;
     border: 2px solid var(--border);
-    padding: 20px 50px 16px;
-    margin-bottom: 16px;
+    padding: 16px 50px 12px;
+    margin-bottom: 10px;
     min-width: clamp(240px, 58vw, 680px);
     text-align: center;
   }
@@ -159,7 +159,7 @@
     font-size: clamp(1rem, 3vw, 1.9rem);
     letter-spacing: 0.4em;
     color: var(--white);
-    margin-bottom: 3px;
+    margin-bottom: 2px;
   }
 
   .accident-label {
@@ -167,7 +167,7 @@
     font-size: clamp(1.1rem, 3.2vw, 2.2rem);
     letter-spacing: 0.15em;
     color: var(--orange);
-    margin-bottom: 16px;
+    margin-bottom: 10px;
   }
 
   /* ── Météo ── */
@@ -237,7 +237,7 @@
     border-bottom: 2px solid var(--border);
     display: flex;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 0;
     transition: border-color 0.5s;
   }
 
@@ -274,7 +274,7 @@
   .stats-row {
     display: flex;
     gap: 16px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
     justify-content: center;
   }
@@ -314,9 +314,8 @@
     letter-spacing: 0.25em;
     color: var(--green);
     text-transform: uppercase;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
     opacity: 0;
-    transition: opacity 0.5s;
   }
   .record-badge.visible { opacity: 1; }
   .record-badge::before { content: '★'; }
