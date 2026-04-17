@@ -94,7 +94,7 @@
     letter-spacing: 0.4em;
     color: var(--yellow-dim);
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 26px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -508,6 +508,44 @@
     transition: border-color 0.2s, color 0.2s;
   }
   .purge-btn:hover { border-color: var(--red); color: var(--red); }
+  /* ── PIN ── */
+  #pin-overlay .dialog-box { border: 2px solid var(--yellow-dim); max-width: 340px; }
+  .pin-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem; letter-spacing: .2em;
+    color: var(--yellow); margin-bottom: 6px;
+  }
+  .pin-subtitle {
+    font-size: .78rem; letter-spacing: .15em;
+    color: var(--muted); margin-bottom: 20px;
+  }
+  .pin-display {
+    display: flex; justify-content: center; gap: 12px; margin-bottom: 20px;
+  }
+  .pin-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--yellow-dim); background: transparent;
+    transition: background .15s;
+  }
+  .pin-dot.filled { background: var(--yellow); border-color: var(--yellow); }
+  .pin-pad {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-bottom: 16px;
+  }
+  .pin-key {
+    background: #1a1a1a; border: 1px solid var(--border);
+    color: var(--white); font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem; letter-spacing: .1em;
+    padding: 14px 0; cursor: pointer; transition: background .15s;
+  }
+  .pin-key:hover { background: #2a2a2a; }
+  .pin-key:active { background: var(--yellow-dim); }
+  .pin-key.del { font-size: 1rem; letter-spacing: .05em; color: var(--muted); }
+  .pin-error {
+    font-size: .72rem; letter-spacing: .2em; color: var(--red);
+    text-transform: uppercase; height: 18px; margin-bottom: 8px;
+    transition: opacity .3s;
+  }
 </style>
 </head>
 <body>
@@ -578,8 +616,8 @@
     <div class="record-badge" id="record-badge">Nouveau record en cours !</div>
 
     <div class="actions-row">
-      <button class="edit-btn" onclick="openEdit()"><span>✎ Saisir le nombre de jours actuel</span></button>
-      <button class="reset-btn" onclick="askReset()"><span>⚠ Signaler un accident — Remettre à zéro</span></button>
+      <button class="edit-btn" onclick="askWithPin('edit')"><span>✎ Saisir le nombre de jours actuel</span></button>
+      <button class="reset-btn" onclick="askWithPin('reset')"><span>⚠ Signaler un accident — Remettre à zéro</span></button>
     </div>
 
     <div class="date-footer" id="today-date"></div>
@@ -598,7 +636,36 @@
   <div class="stripe-bar"></div>
 </div>
 
-<button class="purge-btn" onclick="askPurge()">⊗ Réinitialiser toutes les données</button>
+<button class="purge-btn" onclick="askWithPin('purge')">⊗ Réinitialiser toutes les données</button>
+
+<!-- PIN overlay -->
+<div class="overlay" id="pin-overlay">
+  <div class="dialog-box">
+    <div class="pin-title">🔒 Code PIN</div>
+    <div class="pin-subtitle" id="pin-subtitle">Saisissez le code pour continuer</div>
+    <div class="pin-display">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key del" onclick="pinKey('C')">Effacer</button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="closeOverlay('pin-overlay');pinReset()">✕</button>
+    </div>
+  </div>
+</div>
 
 <!-- Overlays -->
 <div class="overlay" id="confirm-overlay">
@@ -790,6 +857,51 @@
   renderClock();
   setInterval(renderClock, 60000);
 
+  // ── PIN ──────────────────────────────────────────────────────────
+  const PIN_CODE = '1234'; // ← modifiez ce code ici
+  let pinBuffer = '';
+  let pinAction = '';
+
+  function askWithPin(action) {
+    pinAction = action;
+    pinReset();
+    const labels = { edit: 'Saisie du compteur', reset: 'Signaler un accident', purge: 'Réinitialisation totale' };
+    document.getElementById('pin-subtitle').textContent = labels[action] || 'Saisissez le code';
+    document.getElementById('pin-overlay').classList.add('active');
+  }
+
+  function pinReset() {
+    pinBuffer = '';
+    for (let i = 0; i < 4; i++) document.getElementById('pd' + i).classList.remove('filled');
+    document.getElementById('pin-error').textContent = '';
+  }
+
+  function pinKey(k) {
+    if (k === 'C') { if (pinBuffer.length > 0) { pinBuffer = pinBuffer.slice(0, -1); pinRefresh(); } return; }
+    if (pinBuffer.length >= 4) return;
+    pinBuffer += k;
+    pinRefresh();
+    if (pinBuffer.length === 4) setTimeout(pinValidate, 120);
+  }
+
+  function pinRefresh() {
+    for (let i = 0; i < 4; i++)
+      document.getElementById('pd' + i).classList.toggle('filled', i < pinBuffer.length);
+  }
+
+  function pinValidate() {
+    if (pinBuffer === PIN_CODE) {
+      closeOverlay('pin-overlay');
+      pinReset();
+      if (pinAction === 'edit')  openEdit();
+      if (pinAction === 'reset') askReset();
+      if (pinAction === 'purge') askPurge();
+    } else {
+      document.getElementById('pin-error').textContent = 'Code incorrect';
+      setTimeout(() => { pinReset(); }, 900);
+    }
+  }
+
   // ── Overlays ──────────────────────────────────────────────────────
   function closeOverlay(id) {
     document.getElementById(id).classList.remove('active');
@@ -808,7 +920,6 @@
       const newRecord = days > (d.record || 0) ? days : (d.record || 0);
       const now = new Date().toISOString();
       ref.set({ startDate: now, record: newRecord });
-
       const el = document.getElementById('count');
       el.classList.remove('flash-red');
       void el.offsetWidth;
@@ -830,7 +941,6 @@
   function applyDays() {
     const val = parseInt(document.getElementById('days-input').value);
     if (isNaN(val) || val < 0) { document.getElementById('days-input').focus(); return; }
-
     ref.once('value').then(snap => {
       const d = snap.val() || { record: 0 };
       const startDate = new Date(Date.now() - val * 24 * 60 * 60 * 1000).toISOString();
