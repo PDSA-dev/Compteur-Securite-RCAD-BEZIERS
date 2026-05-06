@@ -735,16 +735,38 @@
 
 <script>
   firebase.initializeApp({
-    apiKey: "AIzaSyANZLxt-LrE3O71AhQ2YBP_BEjcv9OImuE",
-    authDomain: "compteur-securite.firebaseapp.com",
-    databaseURL: "https://compteur-securite-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "compteur-securite",
-    storageBucket: "compteur-securite.firebasestorage.app",
-    messagingSenderId: "752222925843",
-    appId: "1:752222925843:web:3c58778904ba8e2ca77be6"
+    apiKey: "AIzaSyDQnyIU1QfIalA9t7W4tRS6rX8qJbLWrUk",
+    authDomain: "compteur-securite-uosud-est.firebaseapp.com",
+    databaseURL: "https://compteur-securite-uosud-est-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "compteur-securite-uosud-est",
+    storageBucket: "compteur-securite-uosud-est.firebasestorage.app",
+    messagingSenderId: "14435818144",
+    appId: "1:14435818144:web:23bdaf9ec44ffce26f87c5"
   });
-  const db  = firebase.database();
-  const ref = db.ref('compteur');
+  const db       = firebase.database();
+  const sitesRef = db.ref('sites_v2');
+
+  // ── Paramètre du site (seule ligne à changer pour un autre centre) ──
+  const SITE_KEYWORD = 'Béziers';
+  let ref = null;
+
+  function initSiteRef(callback) {
+    sitesRef.once('value').then(snap => {
+      const data = snap.val() || {};
+      const id = Object.keys(data).find(k =>
+        (data[k].name || '').includes(SITE_KEYWORD) ||
+        (data[k].location || '').includes(SITE_KEYWORD)
+      );
+      if (id) {
+        ref = sitesRef.child(id);
+      } else {
+        const newRef = sitesRef.push();
+        newRef.set({ name: 'RCAD ' + SITE_KEYWORD, location: SITE_KEYWORD, startDate: new Date().toISOString(), record: 0 });
+        ref = newRef;
+      }
+      callback();
+    });
+  }
 
   // ── Helpers ──────────────────────────────────────────────────────
   function fmtDate(iso) {
@@ -843,6 +865,10 @@
     }
   }
 
+  // ── Initialisation : résolution du site puis démarrage ───────────
+  initSiteRef(() => {
+    db.ref('config/pin').once('value').then(s => { if (s.val()) currentPin = s.val(); });
+
   // ── Listener Firebase temps réel ──────────────────────────────────
   ref.on('value', snap => {
     let d = snap.val();
@@ -855,15 +881,21 @@
 
     const days = daysDiff(d.startDate);
 
+    // Si le compteur actuel dépasse le record stocké, on met à jour silencieusement
+    const liveRecord = Math.max(days, d.record || 0);
+    if (days > (d.record || 0)) {
+      ref.update({ record: days });
+    }
+
     document.getElementById('count').textContent = days;
     document.getElementById('start-date').textContent = fmtDate(d.startDate);
-    document.getElementById('record-val').textContent = d.record > 0 ? d.record + ' j' : '—';
+    document.getElementById('record-val').textContent = liveRecord > 0 ? liveRecord + ' j' : '—';
 
     // Dernier accident = veille du jour de démarrage du compteur
     document.getElementById('last-accident').textContent = dateVeille(d.startDate);
 
     const badge = document.getElementById('record-badge');
-    badge.classList.toggle('visible', days > 0 && days >= d.record);
+    badge.classList.toggle('visible', days > 0 && days >= liveRecord);
 
     updateMeteo(days);
   });
@@ -878,11 +910,6 @@
   let pinAction = '';
   let pinMode = 'auth'; // 'auth' | 'change-old' | 'change-new' | 'change-confirm'
   let newPinBuffer = '';
-
-  // Charger le PIN depuis Firebase
-  db.ref('config/pin').once('value').then(s => {
-    if (s.val()) currentPin = s.val();
-  });
 
   const PIN_LABELS = {
     edit:  'Saisie du compteur',
@@ -1055,9 +1082,11 @@
   }
 
   function confirmPurge() {
-    ref.set({ startDate: new Date().toISOString(), record: 0 });
+    ref.update({ startDate: new Date().toISOString(), record: 0 });
     closeOverlay('purge-overlay');
   }
+
+  }); // fin initSiteRef
 </script>
 </body>
 </html>
