@@ -870,40 +870,7 @@
     }
   }
 
-  // ── Initialisation : résolution du site puis démarrage ───────────
-  initSiteRef(() => {
-    db.ref('config/pin').once('value').then(s => { if (s.val()) currentPin = s.val(); });
-
-  // ── Listener Firebase temps réel ──────────────────────────────────
-  ref.on('value', snap => {
-    let d = snap.val();
-
-    if (!d) {
-      d = { startDate: new Date().toISOString(), record: 0 };
-      ref.set(d);
-      return;
-    }
-
-    const days = daysDiff(d.startDate);
-
-    // Si le compteur actuel dépasse le record stocké, on met à jour silencieusement
-    const liveRecord = Math.max(days, d.record || 0);
-    if (days > (d.record || 0)) {
-      ref.update({ record: days });
-    }
-
-    document.getElementById('count').textContent = days;
-    document.getElementById('start-date').textContent = fmtDate(d.startDate);
-    document.getElementById('record-val').textContent = liveRecord > 0 ? liveRecord + ' j' : '—';
-
-    // Dernier accident = veille du jour de démarrage du compteur
-    document.getElementById('last-accident').textContent = dateVeille(d.startDate);
-
-    const badge = document.getElementById('record-badge');
-    badge.classList.toggle('visible', days > 0 && days >= liveRecord);
-
-    updateMeteo(days);
-  });
+  // ── PIN vars (scope global pour les onclick HTML) ───────────────
 
   renderClock();
   setInterval(renderClock, 60000);
@@ -1091,7 +1058,38 @@
     closeOverlay('purge-overlay');
   }
 
-  }); // fin initSiteRef
+  // ── Initialisation : résolution du site puis démarrage ───────────
+  initSiteRef(() => {
+    db.ref('config/pin').once('value').then(s => { if (s.val()) currentPin = s.val(); });
+    ref.on('value', snap => {
+    let d = snap.val();
+
+    if (!d) {
+      d = { startDate: new Date().toISOString(), record: 0 };
+      ref.set(d);
+      return;
+    }
+
+    const days = daysDiff(d.startDate);
+
+    // Si le compteur actuel dépasse le record stocké, on met à jour silencieusement
+    const liveRecord = Math.max(days, d.record || 0);
+    if (days > (d.record || 0)) {
+      ref.update({ record: days });
+    }
+
+    document.getElementById('count').textContent = days;
+    document.getElementById('start-date').textContent = fmtDate(d.startDate);
+    document.getElementById('record-val').textContent = liveRecord > 0 ? liveRecord + ' j' : '—';
+
+    // Dernier accident = veille du jour de démarrage du compteur
+    document.getElementById('last-accident').textContent = dateVeille(d.startDate);
+
+    const badge = document.getElementById('record-badge');
+    badge.classList.toggle('visible', days > 0 && days >= liveRecord);
+
+    updateMeteo(days);
+  });
+  });
+
 </script>
-</body>
-</html>
