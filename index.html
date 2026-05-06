@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jours sans accident du travail — RCAD Béziers</title>
+<title id="page-title">Jours sans accident du travail</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -563,7 +563,7 @@
   <main>
     <div class="label-top">Sécurité au travail</div>
     <div class="company-name">
-      <span class="live-dot"></span>Données partagées en temps réel — RCAD Béziers
+      <span class="live-dot"></span>Données partagées en temps réel — <span id="header-site-name">…</span>
     </div>
 
     <div class="counter-frame">
@@ -753,9 +753,11 @@
   function initSiteRef(callback) {
     sitesRef.once('value').then(snap => {
       const data = snap.val() || {};
+      const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+      const kn = norm(SITE_KEYWORD);
       const id = Object.keys(data).find(k =>
-        (data[k].name || '').includes(SITE_KEYWORD) ||
-        (data[k].location || '').includes(SITE_KEYWORD)
+        norm(data[k].name || '').includes(kn) ||
+        norm(data[k].location || '').includes(kn)
       );
       let siteName = 'RCAD ' + SITE_KEYWORD;
       if (id) {
@@ -767,6 +769,8 @@
         ref = newRef;
       }
       METEO = buildMeteo(siteName);
+      document.getElementById('page-title').textContent = 'Jours sans accident — ' + siteName;
+      document.getElementById('header-site-name').textContent = siteName;
       callback();
     });
   }
