@@ -757,13 +757,16 @@
         (data[k].name || '').includes(SITE_KEYWORD) ||
         (data[k].location || '').includes(SITE_KEYWORD)
       );
+      let siteName = 'RCAD ' + SITE_KEYWORD;
       if (id) {
         ref = sitesRef.child(id);
+        siteName = data[id].name || siteName;
       } else {
         const newRef = sitesRef.push();
-        newRef.set({ name: 'RCAD ' + SITE_KEYWORD, location: SITE_KEYWORD, startDate: new Date().toISOString(), record: 0 });
+        newRef.set({ name: siteName, location: SITE_KEYWORD, startDate: new Date().toISOString(), record: 0 });
         ref = newRef;
       }
+      METEO = buildMeteo(siteName);
       callback();
     });
   }
@@ -792,12 +795,12 @@
       + ' — ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  // ── États météo ───────────────────────────────────────────────────
-  const METEO = [
+  // ── États météo (construit dynamiquement avec le nom du site) ────
+  function buildMeteo(siteName) { return [
     {
       label: 'Orage', sub: '0 à 29 jours', color: '#e03b3b', border: '#e03b3b',
       tagBg: '#e03b3b', tagColor: '#fff',
-      ticker: '⚠ Reprise en cours — chaque jour sans accident compte — mobilisation générale — la sécurité est l\'affaire de tous — ⚠ Reprise en cours — chaque jour sans accident compte — mobilisation générale — la sécurité est l\'affaire de tous',
+      ticker: `⚠ Reprise en cours — chaque jour sans accident compte — mobilisation générale — la sécurité est l'affaire de tous — ⚠ Reprise en cours — chaque jour sans accident compte — mobilisation générale — la sécurité est l'affaire de tous`,
       icon: `<ellipse cx="42" cy="34" rx="22" ry="14" fill="#555"/><ellipse cx="28" cy="38" rx="14" ry="10" fill="#444"/><ellipse cx="55" cy="40" rx="12" ry="9" fill="#444"/><line x1="36" y1="52" x2="30" y2="63" stroke="#e03b3b" stroke-width="3" stroke-linecap="round"/><line x1="30" y1="63" x2="36" y2="63" stroke="#e03b3b" stroke-width="3" stroke-linecap="round"/><line x1="36" y1="63" x2="30" y2="73" stroke="#e03b3b" stroke-width="3" stroke-linecap="round"/><line x1="48" y1="54" x2="44" y2="62" stroke="#e03b3b" stroke-width="2.5" stroke-linecap="round"/><line x1="44" y1="62" x2="48" y2="62" stroke="#e03b3b" stroke-width="2.5" stroke-linecap="round"/><line x1="48" y1="62" x2="44" y2="70" stroke="#e03b3b" stroke-width="2.5" stroke-linecap="round"/>`
     },
     {
@@ -815,16 +818,18 @@
     {
       label: 'Éclaircie', sub: '180 à 364 jours', color: '#7ec85a', border: '#3b6d11',
       tagBg: '#3b6d11', tagColor: '#c0dd97',
-      ticker: '★ Très bonne performance — plus de six mois sans accident — la culture sécurité est bien ancrée — cap sur les 365 jours — bravo à toute l\'équipe RCAD Béziers — ★ Très bonne performance — plus de six mois sans accident — la culture sécurité est bien ancrée',
+      ticker: `★ Très bonne performance — plus de six mois sans accident — la culture sécurité est bien ancrée — cap sur les 365 jours — bravo à toute l'équipe ${siteName} — ★ Très bonne performance — plus de six mois sans accident — la culture sécurité est bien ancrée`,
       icon: `<circle cx="30" cy="30" r="18" fill="#f5c400"/><line x1="30" y1="6" x2="30" y2="2" stroke="#f5c400" stroke-width="3" stroke-linecap="round"/><line x1="30" y1="58" x2="30" y2="54" stroke="#f5c400" stroke-width="3" stroke-linecap="round"/><line x1="6" y1="30" x2="2" y2="30" stroke="#f5c400" stroke-width="3" stroke-linecap="round"/><line x1="54" y1="30" x2="58" y2="30" stroke="#f5c400" stroke-width="3" stroke-linecap="round"/><line x1="14" y1="14" x2="11" y2="11" stroke="#f5c400" stroke-width="3" stroke-linecap="round"/><line x1="46" y1="14" x2="49" y2="11" stroke="#f5c400" stroke-width="3" stroke-linecap="round"/><line x1="14" y1="46" x2="11" y2="49" stroke="#f5c400" stroke-width="3" stroke-linecap="round"/><line x1="46" y1="46" x2="49" y2="49" stroke="#f5c400" stroke-width="3" stroke-linecap="round"/><ellipse cx="62" cy="52" rx="16" ry="10" fill="#555" opacity=".8"/><ellipse cx="52" cy="56" rx="12" ry="8" fill="#444" opacity=".8"/>`
     },
     {
       label: 'Grand soleil', sub: '365 jours et plus', color: '#27c97a', border: '#27c97a',
       tagBg: '#27c97a', tagColor: '#000',
-      ticker: '✦ EXCELLENCE — un an sans accident du travail — performance exceptionnelle — félicitations à l\'ensemble de l\'équipe RCAD Béziers — zéro blessure, objectif atteint — ✦ EXCELLENCE — un an sans accident du travail — performance exceptionnelle',
+      ticker: `✦ EXCELLENCE — un an sans accident du travail — performance exceptionnelle — félicitations à l'ensemble de l'équipe ${siteName} — zéro blessure, objectif atteint — ✦ EXCELLENCE — un an sans accident du travail — performance exceptionnelle`,
       icon: `<circle cx="40" cy="38" r="22" fill="#f5c400"/><line x1="40" y1="10" x2="40" y2="4" stroke="#f5c400" stroke-width="3.5" stroke-linecap="round"/><line x1="40" y1="72" x2="40" y2="66" stroke="#f5c400" stroke-width="3.5" stroke-linecap="round"/><line x1="8" y1="38" x2="2" y2="38" stroke="#f5c400" stroke-width="3.5" stroke-linecap="round"/><line x1="78" y1="38" x2="72" y2="38" stroke="#f5c400" stroke-width="3.5" stroke-linecap="round"/><line x1="17" y1="17" x2="13" y2="13" stroke="#f5c400" stroke-width="3.5" stroke-linecap="round"/><line x1="63" y1="17" x2="67" y2="13" stroke="#f5c400" stroke-width="3.5" stroke-linecap="round"/><line x1="17" y1="59" x2="13" y2="63" stroke="#f5c400" stroke-width="3.5" stroke-linecap="round"/><line x1="63" y1="59" x2="67" y2="63" stroke="#f5c400" stroke-width="3.5" stroke-linecap="round"/>`
     }
-  ];
+  ]; } // fin buildMeteo
+
+  let METEO = [];
 
   function getMeteoIndex(days) {
     if (days < 30)  return 0;
