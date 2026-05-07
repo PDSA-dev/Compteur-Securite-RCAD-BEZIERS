@@ -491,6 +491,25 @@
   }
 
   /* Purge button */
+
+  /* ═══ INPUT MODE TOGGLE ════════════════════════════════════════ */
+  .input-mode-tabs {
+    display: flex; gap: 0; margin-bottom: 16px;
+    border: 2px solid var(--yellow-dim); background: #0a0a0a;
+  }
+  .input-tab {
+    flex: 1; padding: 9px 12px; background: transparent; border: none;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.82rem;
+    font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--muted); cursor: pointer; transition: all 0.2s;
+    border-right: 2px solid var(--yellow-dim);
+  }
+  .input-tab:last-child { border-right: none; }
+  .input-tab.active { background: var(--yellow-dim); color: var(--yellow); }
+  .input-tab:hover:not(.active) { background: #1a1a1a; color: var(--white); }
+  .input-mode-panel { display: none; }
+  .input-mode-panel.active { display: block; }
+
   .purge-btn {
     position: fixed;
     bottom: 24px;
@@ -697,15 +716,26 @@
 <div class="overlay" id="edit-overlay">
   <div class="dialog-box">
     <div class="edit-title">✎ Saisir le compteur</div>
-    <div class="edit-subtitle">
-      Entrez le nombre de jours déjà écoulés depuis le dernier accident.<br>
-      Le compteur continuera automatiquement à partir de cette valeur.
+    <div class="edit-subtitle">Choisissez comment saisir la valeur du compteur.</div>
+    <div class="input-mode-tabs">
+      <button class="input-tab active" id="edit-tab-days" onclick="switchEditTab('days')">📅 Nombre de jours</button>
+      <button class="input-tab" id="edit-tab-date" onclick="switchEditTab('date')">🗓 Date du dernier accident</button>
     </div>
-    <label class="edit-field-label" for="days-input">Nombre de jours actuel</label>
-    <input class="edit-input" type="number" id="days-input" min="0" max="9999" placeholder="0" />
-    <div class="edit-hint">Ex : si le dernier accident remonte à 45 jours, entrez 45.</div>
+    <div class="input-mode-panel active" id="edit-panel-days">
+      <label class="edit-field-label" for="days-input">Nombre de jours sans accident</label>
+      <input class="edit-input" type="number" id="days-input" min="0" max="9999" placeholder="0" />
+      <div class="edit-hint">Ex : si le dernier accident remonte à 45 jours, entrez 45.</div>
+    </div>
+    <div class="input-mode-panel" id="edit-panel-date">
+      <label class="edit-field-label" for="edit-accident-date">Date du dernier accident</label>
+      <input type="date" id="edit-accident-date"
+        style="width:100%;background:#0a0a0a;border:2px solid var(--yellow-dim);color:var(--yellow);
+               font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;letter-spacing:.1em;
+               padding:10px 14px;margin-bottom:8px;outline:none;color-scheme:dark;" />
+      <div class="edit-hint">Le compteur démarrera le lendemain de cette date.</div>
+    </div>
     <div class="edit-btns">
-      <button class="btn-apply" onclick="applyDays()">Appliquer</button>
+      <button class="btn-apply" onclick="applyEdit()">Appliquer</button>
       <button class="btn-cancel" onclick="closeOverlay('edit-overlay')">Annuler</button>
     </div>
   </div>
@@ -1026,13 +1056,41 @@
   }
 
   // ── Edit ──────────────────────────────────────────────────────────
+  function switchEditTab(mode) {
+    ['days', 'date'].forEach(m => {
+      document.getElementById('edit-tab-' + m).classList.toggle('active', m === mode);
+      document.getElementById('edit-panel-' + m).classList.toggle('active', m === mode);
+    });
+  }
+
   function openEdit() {
     ref.once('value').then(snap => {
       const d = snap.val();
       document.getElementById('days-input').value = d ? daysDiff(d.startDate) : 0;
+      document.getElementById('edit-accident-date').value = '';
+      switchEditTab('days');
       document.getElementById('edit-overlay').classList.add('active');
       setTimeout(() => document.getElementById('days-input').select(), 50);
     });
+  }
+
+  function applyEdit() {
+    const panelDate = document.getElementById('edit-panel-date');
+    if (panelDate.classList.contains('active')) {
+      const dateVal = document.getElementById('edit-accident-date').value;
+      if (!dateVal) { document.getElementById('edit-accident-date').focus(); return; }
+      ref.once('value').then(snap => {
+        const d = snap.val() || { record: 0 };
+        const accDate = new Date(dateVal + 'T12:00:00');
+        const startDate = new Date(accDate.getTime() + 24 * 60 * 60 * 1000).toISOString();
+        const val = Math.max(0, Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000));
+        const newRecord = val > (d.record || 0) ? val : (d.record || 0);
+        ref.update({ startDate, record: newRecord });
+        closeOverlay('edit-overlay');
+      });
+    } else {
+      applyDays();
+    }
   }
 
   function applyDays() {
@@ -1048,7 +1106,7 @@
   }
 
   document.getElementById('days-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter')  applyDays();
+    if (e.key === 'Enter')  applyEdit();
     if (e.key === 'Escape') closeOverlay('edit-overlay');
   });
 
