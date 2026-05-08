@@ -490,43 +490,71 @@
     line-height: 1.5;
   }
 
-  /* Purge button */
-
-  /* ═══ INPUT MODE TOGGLE ════════════════════════════════════════ */
-  .input-mode-tabs {
-    display: flex; gap: 0; margin-bottom: 16px;
-    border: 2px solid var(--yellow-dim); background: #0a0a0a;
-  }
-  .input-tab {
-    flex: 1; padding: 9px 12px; background: transparent; border: none;
-    font-family: 'Barlow Condensed', sans-serif; font-size: 0.82rem;
-    font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--muted); cursor: pointer; transition: all 0.2s;
-    border-right: 2px solid var(--yellow-dim);
-  }
-  .input-tab:last-child { border-right: none; }
-  .input-tab.active { background: var(--yellow-dim); color: var(--yellow); }
-  .input-tab:hover:not(.active) { background: #1a1a1a; color: var(--white); }
-  .input-mode-panel { display: none; }
-  .input-mode-panel.active { display: block; }
-
-  .purge-btn {
+  /* Settings button */
+  .settings-btn {
     position: fixed;
     bottom: 24px;
     right: 24px;
     z-index: 50;
-    background: transparent;
-    border: 1px solid #2a2a2a;
-    color: #444;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 0.62rem;
+    background: #1a1a1a;
+    border: 2px solid var(--yellow-dim);
+    color: var(--yellow);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.82rem;
     letter-spacing: 0.25em;
     text-transform: uppercase;
-    padding: 6px 12px;
+    padding: 10px 18px;
     cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  .purge-btn:hover { border-color: var(--red); color: var(--red); }
+  .settings-btn:hover { border-color: var(--yellow); background: var(--yellow); color: #000; }
+
+  /* Settings overlay */
+  #settings-overlay .dialog-box { border: 2px solid var(--yellow-dim); max-width: 420px; }
+  .settings-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .settings-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.2em; color: var(--yellow); }
+  .settings-sub { font-size: 0.68rem; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+  .settings-cards { display: flex; flex-direction: column; gap: 10px; }
+  .settings-card {
+    display: flex; align-items: center; gap: 14px;
+    background: #0f0f0f; border: 1px solid var(--border);
+    padding: 14px 18px; cursor: pointer; width: 100%;
+    transition: border-color 0.2s, background 0.2s; text-align: left;
+  }
+  .settings-card:hover { background: #1a1a1a; }
+  .settings-card.s-yellow { border-left: 3px solid var(--yellow-dim); }
+  .settings-card.s-yellow:hover { border-left-color: var(--yellow); }
+  .settings-card.s-green { border-left: 3px solid #1a4a2a; }
+  .settings-card.s-green:hover { border-left-color: var(--green); }
+  .settings-card.s-red { border-left: 3px solid #4a1a1a; }
+  .settings-card.s-red:hover { border-left-color: var(--red); }
+  .settings-card-icon { font-size: 1.5rem; flex-shrink: 0; width: 36px; text-align: center; }
+  .settings-card-body {}
+  .settings-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.18em; color: var(--white); }
+  .settings-card.s-yellow .settings-card-title { color: var(--yellow); }
+  .settings-card.s-green .settings-card-title { color: var(--green); }
+  .settings-card.s-red .settings-card-title { color: var(--red); }
+  .settings-card-desc { font-size: 0.65rem; letter-spacing: 0.1em; color: var(--muted); margin-top: 3px; }
+
+  /* Tabs in edit overlay */
+  .input-tabs { display: flex; gap: 0; margin-bottom: 16px; }
+  .input-tab {
+    flex: 1; background: #0a0a0a; border: 1px solid var(--border);
+    color: var(--muted); font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem; letter-spacing: 0.12em; padding: 9px 6px;
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+  }
+  .input-tab:first-child { border-right: none; }
+  .input-tab.active { background: #1a1400; border-color: var(--yellow-dim); color: var(--yellow); }
+  .input-panel { display: none; }
+  .input-panel.active { display: block; }
+
+  /* Record overlay */
+  #record-overlay .dialog-box { border: 2px solid var(--green); }
+  .record-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; letter-spacing: 0.2em; color: var(--green); margin-bottom: 8px; }
   /* ── PIN ── */
   #pin-overlay .dialog-box { border: 2px solid var(--yellow-dim); max-width: 340px; }
   .pin-title {
@@ -643,7 +671,6 @@
     <div class="record-badge" id="record-badge">Nouveau record en cours !</div>
 
     <div class="actions-row">
-      <button class="edit-btn" onclick="askWithPin('edit')"><span>✎ Saisir le nombre de jours actuel</span></button>
       <button class="reset-btn" onclick="askWithPin('reset')"><span>⚠ Signaler un accident — Remettre à zéro</span></button>
     </div>
 
@@ -663,7 +690,7 @@
   <div class="stripe-bar"></div>
 </div>
 
-<button class="purge-btn" onclick="askWithPin('purge')">⊗ Réinitialiser toutes les données</button>
+<button class="settings-btn" onclick="askWithPin('settings')">⚙ Réglages</button>
 
 <!-- PIN overlay -->
 <div class="overlay" id="pin-overlay">
@@ -715,20 +742,22 @@
 
 <div class="overlay" id="edit-overlay">
   <div class="dialog-box">
-    <div class="edit-title">✎ Saisir le compteur</div>
-    <div class="edit-subtitle">Choisissez comment saisir la valeur du compteur.</div>
-    <div class="input-mode-tabs">
-      <button class="input-tab active" id="edit-tab-days" onclick="switchEditTab('days')">📅 Nombre de jours</button>
-      <button class="input-tab" id="edit-tab-date" onclick="switchEditTab('date')">🗓 Date du dernier accident</button>
+    <div class="edit-title">✎ Corriger le compteur</div>
+    <div class="edit-subtitle">
+      Saisissez le nombre de jours sans accident ou la date du dernier accident.
     </div>
-    <div class="input-mode-panel active" id="edit-panel-days">
-      <label class="edit-field-label" for="days-input">Nombre de jours sans accident</label>
+    <div class="input-tabs">
+      <button class="input-tab active" id="tab-days" onclick="switchEditTab('days')">📅 Nombre de jours</button>
+      <button class="input-tab" id="tab-date" onclick="switchEditTab('date')">🗓 Date du dernier accident</button>
+    </div>
+    <div class="input-panel active" id="panel-days">
+      <label class="edit-field-label" for="days-input">Jours sans accident actuels</label>
       <input class="edit-input" type="number" id="days-input" min="0" max="9999" placeholder="0" />
       <div class="edit-hint">Ex : si le dernier accident remonte à 45 jours, entrez 45.</div>
     </div>
-    <div class="input-mode-panel" id="edit-panel-date">
-      <label class="edit-field-label" for="edit-accident-date">Date du dernier accident</label>
-      <input type="date" id="edit-accident-date"
+    <div class="input-panel" id="panel-date">
+      <label class="edit-field-label" for="accident-date-edit">Date du dernier accident</label>
+      <input type="date" id="accident-date-edit"
         style="width:100%;background:#0a0a0a;border:2px solid var(--yellow-dim);color:var(--yellow);
                font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;letter-spacing:.1em;
                padding:10px 14px;margin-bottom:8px;outline:none;color-scheme:dark;" />
@@ -755,6 +784,62 @@
     <div class="confirm-btns">
       <button class="btn-confirm" onclick="confirmPurge()">Tout supprimer</button>
       <button class="btn-cancel" onclick="closeOverlay('purge-overlay')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings overlay -->
+<div class="overlay" id="settings-overlay">
+  <div class="dialog-box">
+    <div class="settings-header">
+      <div>
+        <div class="settings-title">⚙ Réglages</div>
+        <div class="settings-sub">Actions d'administration du compteur</div>
+      </div>
+      <button class="btn-cancel" style="margin-left:auto;padding:8px 14px;font-size:0.8rem;" onclick="closeOverlay('settings-overlay')">✕</button>
+    </div>
+    <div class="settings-cards">
+      <button class="settings-card s-yellow" onclick="closeOverlay('settings-overlay');openEdit()">
+        <span class="settings-card-icon">✎</span>
+        <div class="settings-card-body">
+          <div class="settings-card-title">Corriger le compteur</div>
+          <div class="settings-card-desc">Saisir le nombre de jours ou la date du dernier accident</div>
+        </div>
+      </button>
+      <button class="settings-card s-green" onclick="closeOverlay('settings-overlay');openRecordEdit()">
+        <span class="settings-card-icon">🏆</span>
+        <div class="settings-card-body">
+          <div class="settings-card-title">Enregistrer le record manuellement</div>
+          <div class="settings-card-desc">Définir le record historique de jours sans accident</div>
+        </div>
+      </button>
+      <button class="settings-card s-red" onclick="closeOverlay('settings-overlay');askPurge()">
+        <span class="settings-card-icon">🗑️</span>
+        <div class="settings-card-body">
+          <div class="settings-card-title">Réinitialiser toutes les données</div>
+          <div class="settings-card-desc">Remet à zéro le compteur et efface le record — irréversible</div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Record overlay -->
+<div class="overlay" id="record-overlay">
+  <div class="dialog-box">
+    <span class="confirm-icon">🏆</span>
+    <div class="record-title">Record historique</div>
+    <div class="edit-subtitle">
+      Entrez le record de jours sans accident à inscrire manuellement.<br>
+      Utilisez cette option pour saisir un historique antérieur.
+    </div>
+    <label class="edit-field-label" for="record-input">Record en jours</label>
+    <input class="edit-input" type="number" id="record-input" min="0" max="9999" placeholder="0"
+      style="border-color:var(--green);color:var(--green);" />
+    <div class="edit-hint">Ce record sera affiché et ne sera écrasé que si le compteur actuel le dépasse.</div>
+    <div class="edit-btns">
+      <button class="btn-apply" style="background:var(--green);" onclick="applyRecord()">Enregistrer</button>
+      <button class="btn-cancel" onclick="closeOverlay('record-overlay')">Annuler</button>
     </div>
   </div>
 </div>
@@ -918,9 +1003,10 @@
   let newPinBuffer = '';
 
   const PIN_LABELS = {
-    edit:  'Saisie du compteur',
-    reset: 'Signaler un accident',
-    purge: 'Réinitialisation totale'
+    edit:     'Corriger le compteur',
+    reset:    'Signaler un accident',
+    purge:    'Réinitialisation totale',
+    settings: 'Accès réglages'
   };
 
   const PIN_MODE_LABELS = {
@@ -974,9 +1060,10 @@
       if (pinBuffer === currentPin) {
         closeOverlay('pin-overlay');
         pinReset();
-        if (pinAction === 'edit')  openEdit();
-        if (pinAction === 'reset') askReset();
-        if (pinAction === 'purge') askPurge();
+        if (pinAction === 'edit')     openEdit();
+        if (pinAction === 'reset')    askReset();
+        if (pinAction === 'purge')    askPurge();
+        if (pinAction === 'settings') openSettings();
       } else {
         document.getElementById('pin-error').textContent = 'Code incorrect';
         setTimeout(pinReset, 900);
@@ -1056,58 +1143,89 @@
   }
 
   // ── Edit ──────────────────────────────────────────────────────────
-  function switchEditTab(mode) {
-    ['days', 'date'].forEach(m => {
-      document.getElementById('edit-tab-' + m).classList.toggle('active', m === mode);
-      document.getElementById('edit-panel-' + m).classList.toggle('active', m === mode);
-    });
+  let currentEditTab = 'days';
+
+  function switchEditTab(tab) {
+    currentEditTab = tab;
+    document.getElementById('tab-days').classList.toggle('active', tab === 'days');
+    document.getElementById('tab-date').classList.toggle('active', tab === 'date');
+    document.getElementById('panel-days').classList.toggle('active', tab === 'days');
+    document.getElementById('panel-date').classList.toggle('active', tab === 'date');
+    if (tab === 'days') setTimeout(() => document.getElementById('days-input').select(), 50);
   }
 
   function openEdit() {
     ref.once('value').then(snap => {
       const d = snap.val();
       document.getElementById('days-input').value = d ? daysDiff(d.startDate) : 0;
-      document.getElementById('edit-accident-date').value = '';
+      // Pré-remplir la date du dernier accident
+      if (d && d.startDate) {
+        const veille = new Date(new Date(d.startDate).getTime() - 24*60*60*1000);
+        document.getElementById('accident-date-edit').value = veille.toISOString().split('T')[0];
+      }
       switchEditTab('days');
       document.getElementById('edit-overlay').classList.add('active');
-      setTimeout(() => document.getElementById('days-input').select(), 50);
     });
   }
 
   function applyEdit() {
-    const panelDate = document.getElementById('edit-panel-date');
-    if (panelDate.classList.contains('active')) {
-      const dateVal = document.getElementById('edit-accident-date').value;
-      if (!dateVal) { document.getElementById('edit-accident-date').focus(); return; }
+    if (currentEditTab === 'days') {
+      const val = parseInt(document.getElementById('days-input').value);
+      if (isNaN(val) || val < 0) { document.getElementById('days-input').focus(); return; }
       ref.once('value').then(snap => {
         const d = snap.val() || { record: 0 };
-        const accDate = new Date(dateVal + 'T12:00:00');
-        const startDate = new Date(accDate.getTime() + 24 * 60 * 60 * 1000).toISOString();
-        const val = Math.max(0, Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000));
+        const startDate = new Date(Date.now() - val * 24 * 60 * 60 * 1000).toISOString();
         const newRecord = val > (d.record || 0) ? val : (d.record || 0);
         ref.update({ startDate, record: newRecord });
         closeOverlay('edit-overlay');
       });
     } else {
-      applyDays();
+      const dateVal = document.getElementById('accident-date-edit').value;
+      if (!dateVal) { document.getElementById('accident-date-edit').focus(); return; }
+      const accidentDate = new Date(dateVal + 'T12:00:00');
+      const startDate = new Date(accidentDate.getTime() + 24 * 60 * 60 * 1000).toISOString();
+      const days = Math.floor((Date.now() - accidentDate.getTime()) / (1000 * 60 * 60 * 24));
+      ref.once('value').then(snap => {
+        const d = snap.val() || { record: 0 };
+        const newRecord = days > (d.record || 0) ? days : (d.record || 0);
+        ref.update({ startDate, record: newRecord });
+        closeOverlay('edit-overlay');
+      });
     }
-  }
-
-  function applyDays() {
-    const val = parseInt(document.getElementById('days-input').value);
-    if (isNaN(val) || val < 0) { document.getElementById('days-input').focus(); return; }
-    ref.once('value').then(snap => {
-      const d = snap.val() || { record: 0 };
-      const startDate = new Date(Date.now() - val * 24 * 60 * 60 * 1000).toISOString();
-      const newRecord = val > (d.record || 0) ? val : (d.record || 0);
-      ref.update({ startDate, record: newRecord });
-      closeOverlay('edit-overlay');
-    });
   }
 
   document.getElementById('days-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter')  applyEdit();
     if (e.key === 'Escape') closeOverlay('edit-overlay');
+  });
+
+  // ── Settings ──────────────────────────────────────────────────────
+  function openSettings() {
+    document.getElementById('settings-overlay').classList.add('active');
+  }
+
+  // ── Record edit ───────────────────────────────────────────────────
+  function openRecordEdit() {
+    ref.once('value').then(snap => {
+      const d = snap.val();
+      document.getElementById('record-input').value = d ? (d.record || 0) : 0;
+      document.getElementById('record-overlay').classList.add('active');
+      setTimeout(() => document.getElementById('record-input').select(), 50);
+    });
+  }
+
+  function applyRecord() {
+    const val = parseInt(document.getElementById('record-input').value);
+    if (isNaN(val) || val < 0) { document.getElementById('record-input').focus(); return; }
+    ref.update({ record: val });
+    closeOverlay('record-overlay');
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('record-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter')  applyRecord();
+      if (e.key === 'Escape') closeOverlay('record-overlay');
+    });
   });
 
   // ── Purge ─────────────────────────────────────────────────────────
